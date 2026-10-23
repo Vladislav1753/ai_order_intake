@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run pytest:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run pre-commit run:*)",
+      "Bash(uv run alembic:*)",
+      "Bash(uv sync:*)",
+      "Bash(just test:*)",
+      "Bash(just lint:*)",
+      "Bash(just typecheck:*)",
+      "Bash(just check:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Edit(./data/seed/**)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
