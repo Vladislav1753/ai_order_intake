@@ -1,0 +1,33 @@
+# All hooks run through uv, so tool versions come from uv.lock (no separately pinned revs).
+# Install once: uv run pre-commit install   ·   Run manually: uv run pre-commit run --all-files
+repos:
+  - repo: local
+    hooks:
+      - id: frozen-seed
+        name: data/seed is frozen
+        entry: uv run python scripts/check_frozen_seed.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix --exit-non-zero-on-fix
+        language: system
+        types: [python]
+      - id: mypy
+        name: mypy
+        entry: uv run mypy app scripts
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: pytest
+        name: pytest
+        entry: uv run pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false
