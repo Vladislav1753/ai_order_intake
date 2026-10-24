@@ -69,8 +69,8 @@ Everything that does I/O is `async def`: routes, services, repositories, provide
    `duplicate` and no new draft. The same `order_ref` with different text means `needs_review`
    (conflict). Duplicates never count as new orders.
 3. **Extract (model)**: a bounded tool loop with one tool, `search_catalog(query)`, which only
-   searches the local `products` table (case-insensitive token match on SKU and name; returns
-   SKU + name, never prices). The budget is `catalog_search_budget` searches per request
+   searches the local `products` table (`services/catalog.search_catalog`: word match on SKU and
+   name, best score wins and every tie is returned; returns SKU + name, never prices). The budget is `catalog_search_budget` searches per request
    (setting, default 5) plus the final answer. An empty result tells the model to retry with a
    different query (shorter, synonym, SKU). The output is validated into `ExtractionResult`
    (Pydantic):
@@ -217,11 +217,12 @@ this machine garbles the Cyrillic user path in child environments, so uv fails u
 a step adds a command (migrations, seeding, processing the inbox), add a recipe for it too.
 
 ```
-just install      # uv sync + pre-commit install + alembic upgrade head
+just install      # uv sync + pre-commit install + migrate + seed
 just run          # uv run uvicorn app.main:app --reload
 just test         # uv run pytest
 just check        # uv run pre-commit run --all-files
 just migrate      # uv run alembic upgrade head
+just seed         # uv run python -m app.cli seed (catalog from data/seed/seed.json)
 just revision "<message>"   # uv run alembic revision --autogenerate -m "<message>"
 ```
 

@@ -7,15 +7,20 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 default:
     @just --list --unsorted
 
-# Install dependencies and the pre-commit hook, then migrate the database
+# Install dependencies and the pre-commit hook, migrate, and load the catalog
 install:
     uv sync
     uv run pre-commit install
     uv run alembic upgrade head
+    uv run python -m app.cli seed
 
 # Apply all migrations to the database (var/orders.db unless DATABASE_URL is set)
 migrate:
     uv run alembic upgrade head
+
+# Load the catalog from data/seed/seed.json (insert or update by SKU; safe to rerun)
+seed:
+    uv run python -m app.cli seed
 
 # Generate a migration from model changes, e.g. just revision "add attachments"
 revision message:
