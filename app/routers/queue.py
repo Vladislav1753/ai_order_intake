@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
@@ -8,7 +10,7 @@ from app.services.queue import QUEUE_FILTERS, QueueFilter, QueueService
 router = APIRouter(tags=["queue"])
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", status_code=HTTPStatus.OK, response_class=HTMLResponse)
 async def queue(
     request: Request, session: SessionDep, status: QueueFilter | None = None
 ) -> HTMLResponse:
@@ -25,7 +27,7 @@ async def queue(
     )
 
 
-@router.get("/requests/{request_id}", response_class=HTMLResponse)
+@router.get("/requests/{request_id}", status_code=HTTPStatus.OK, response_class=HTMLResponse)
 async def request_detail(request: Request, request_id: int, session: SessionDep) -> HTMLResponse:
     detail = await QueueService(session).request_detail(request_id)
     return templates.TemplateResponse(request, "request.html", {"detail": detail})

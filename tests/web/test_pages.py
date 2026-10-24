@@ -9,12 +9,12 @@ from httpx2 import AsyncClient
 
 from app.cli import process, read_seed_file, seed
 from app.core.config import Settings
+from app.db.migrations import run_alembic
 from app.db.session import make_engine, make_sessionmaker
 from app.repositories.drafts import DraftRepository
 from app.repositories.requests import RequestRepository
 from app.services.inbox import load_requests
 from tests.client import app_client
-from tests.integration.conftest import run_alembic
 
 
 @pytest.fixture
@@ -115,12 +115,14 @@ async def test_a_rejected_correction_is_explained_and_not_saved(
 
     zero = await pages.post(f"{url}/corrections", data={"line": 1, "field": "quantity", "value": 0})
     unknown = await pages.post(f"{url}/corrections", data={"line": 1, "field": "sku", "value": "X"})
+    price = await pages.post(f"{url}/corrections", data={"line": 1, "field": "unit_cents"})
     sign_off = await pages.post(f"{url}/review")
 
     assert zero.status_code == 422
     assert "Not saved." in zero.text and "positive whole number" in zero.text
     assert zero.headers["hx-push-url"] == url  # the address bar keeps the draft's URL
     assert unknown.status_code == 422 and "X is not in the catalog" in unknown.text
+    assert price.status_code == 422 and "field: Input should be &#39;sku&#39; or" in price.text
     assert sign_off.status_code == 422 and "still needs clarification" in sign_off.text
     assert "No corrections yet" in (await pages.get(url)).text
 
@@ -155,3 +157,11 @@ async def test_unknown_ids_are_not_found(pages: AsyncClient) -> None:
     assert (await pages.get("/requests/999")).status_code == 404
     response = await pages.post("/drafts/999/corrections", data={"line": 1, "field": "sku"})
     assert response.status_code == 404
+
+
+async def test_invalid_input_elsewhere_gets_the_default_422(pages: AsyncClient) -> None:
+    """Only the draft page's own forms re-render a page; there is no draft to show here."""
+    response = await pages.post("/drafts/999/corrections", data={"line": 0, "field": "sku"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "line"]

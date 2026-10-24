@@ -13,13 +13,13 @@ import pytest
 
 from app.cli import process, read_seed_file, seed
 from app.core.config import PROJECT_ROOT, Settings
+from app.db.migrations import run_alembic
 from app.db.session import make_engine, make_sessionmaker
 from app.models import DraftOrder, IncomingRequest
 from app.repositories.drafts import DraftRepository
 from app.repositories.requests import RequestRepository
 from app.services.inbox import load_requests
 from tests.client import app_client
-from tests.integration.conftest import run_alembic
 
 EXPECTED: dict[str, Any] = json.loads(
     (PROJECT_ROOT / "data" / "expected" / "expected-results.json").read_text(encoding="utf-8")

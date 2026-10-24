@@ -30,7 +30,7 @@ templates   providers (LLMProvider: live SDK client | replay client)
 
 | Package | Owns | Must not |
 |---|---|---|
-| `routers/` | HTTP, form parsing, rendering `templates/` | contain business rules or queries |
+| `routers/` | HTTP, form parsing (Pydantic form models), rendering `templates/` | contain business rules, queries, or `try`/`except` |
 | `services/` | business logic, transaction boundaries (one commit per request processed) | build SQL; call the SDK directly |
 | `repositories/` | every SQLAlchemy query; take an `AsyncSession` | commit; contain business rules |
 | `models/` | tables | contain behaviour beyond simple properties |
@@ -161,13 +161,18 @@ migrations drift apart).
 ## Coding conventions
 
 - Full type hints; `mypy app scripts` is clean. SQLAlchemy uses `Mapped[...]` / `mapped_column`.
+- Route decorators declare `status_code=HTTPStatus.<NAME>` and `response_model=` (JSON) or
+  `response_class=` (`HTMLResponse` pages; `RedirectResponse`, where the route returns the
+  URL). No bare status numbers anywhere.
 - Enums are `StrEnum`. Timestamps are timezone-aware UTC. IDs are integers in the DB; external
   request IDs are kept as given.
 - **Errors.** Domain errors live in `app/core/errors.py` (`DomainError`: `NotFoundError`,
   `AlreadyExistsError`, `InvalidDataError`, `StorageUnavailableError`). Library exceptions don't
   cross layers: every async repository method has `@translates_db_errors`, and services wrap
-  `session.commit()` in `translate_db_errors()` (`app/db/errors.py`). Routers get HTTP statuses
-  from `app/api/errors.py`. The batch turns any error into a `failed` result for that request
+  `session.commit()` in `translate_db_errors()` (`app/db/errors.py`). Routers stay thin and
+  catch nothing: exception handlers in `app/api/handlers.py` turn domain errors into HTTP
+  statuses, and a change rejected on the draft page (`InvalidDataError` or invalid form input)
+  into that page again with the reason (422). The batch turns any error into a `failed` result for that request
   only. Anything that is not a `DomainError` is a bug: let it propagate, never swallow it.
 - Use stdlib `logging`, not `print` (scripts excepted). No commented-out code.
 - Docstrings only where intent is not obvious from names. Keep functions small and single-purpose.
@@ -238,6 +243,7 @@ just seed         # uv run python -m app.cli seed (catalog from data/seed/seed.j
 just process      # process seed requests + data/inbox from replays/ (no key needed)
 just record       # same with real model calls; saves each response to replays/
 just check-data   # check data/expected against inputs and rules (independent of the app)
+just report       # write results/report.md (expected vs observed, fresh DB, from replays)
 just revision "<message>"   # uv run alembic revision --autogenerate -m "<message>"
 ```
 

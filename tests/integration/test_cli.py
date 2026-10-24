@@ -10,8 +10,8 @@ import pytest
 
 from app.cli import main
 from app.core.config import Settings
+from app.db.migrations import run_alembic
 from app.db.session import make_engine
-from tests.integration.conftest import run_alembic
 
 
 @pytest.fixture

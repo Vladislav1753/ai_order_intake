@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.db.base import Base
-from tests.integration.conftest import run_alembic
+from app.db.migrations import run_alembic
 
 
 def _schema_diff(connection: Connection) -> list[object]:

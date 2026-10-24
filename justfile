@@ -34,6 +34,10 @@ process:
 record:
     uv run python -m app.cli process --mode live
 
+# Write results/report.md: expected vs observed on a fresh database, from replays (no key)
+report:
+    uv run python -m scripts.results_report
+
 # Generate a migration from model changes, e.g. just revision "add attachments"
 revision message:
     uv run alembic revision --autogenerate -m "{{message}}"
