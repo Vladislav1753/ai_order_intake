@@ -75,6 +75,11 @@
         {% endfor %}
       </table>
     </section>
+    <section class="card">
+      <h2>Export</h2>
+      <p><a href="/exports/reviewed.json" hx-boost="false" download>Reviewed orders (JSON)</a></p>
+      <p class="muted small">Only orders a person marked reviewed ({{ summary.counts["reviewed"] }} now), with their lines, totals and history. Drafts that only passed the checks are left out.</p>
+    </section>
   </div>
 </div>
 {% endblock %}

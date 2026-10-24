@@ -33,6 +33,18 @@ class DraftRepository:
         )
 
     @translates_db_errors
+    async def list_reviewed(self) -> list[DraftOrder]:
+        """Signed-off drafts with their lines and history, in sign-off order."""
+        return list(
+            await self.session.scalars(
+                select(DraftOrder)
+                .where(DraftOrder.status == DraftStatus.REVIEWED)
+                .order_by(DraftOrder.reviewed_at, DraftOrder.id)
+                .options(selectinload(DraftOrder.lines), selectinload(DraftOrder.corrections))
+            )
+        )
+
+    @translates_db_errors
     async def list_all(self, status: DraftStatus | None = None) -> list[DraftOrder]:
         query = select(DraftOrder).order_by(DraftOrder.id).options(selectinload(DraftOrder.lines))
         if status is not None:

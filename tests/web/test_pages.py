@@ -139,6 +139,40 @@ async def test_signing_off_a_ready_draft(pages: AsyncClient, settings: Settings)
     assert "signed off" in page.text
 
 
+async def test_only_signed_off_drafts_are_exported(pages: AsyncClient, settings: Settings) -> None:
+    drafts, _ = await ids(settings)
+    before = await pages.get("/exports/reviewed.json")
+    o12, o5 = f"/drafts/{drafts['O12']}", f"/drafts/{drafts['O5']}"
+    await pages.post(f"{o12}/corrections", data={"line": 1, "field": "sku", "value": "CAB-2"})
+    await pages.post(f"{o12}/review")
+    await pages.post(f"{o5}/review")  # signs off the conflicting request R13
+
+    response = await pages.get("/exports/reviewed.json")
+    corrected, conflicted = response.json()["orders"]
+
+    assert before.json()["orders"] == []  # 4 drafts passed the checks, none was reviewed yet
+    assert response.headers["content-disposition"] == 'attachment; filename="reviewed-orders.json"'
+    assert 'href="/exports/reviewed.json"' in (await pages.get("/")).text
+    assert corrected["order_ref"] == "O12" and corrected["source_request"] == "R12"
+    [line] = corrected["lines"]
+    assert (line["sku"], line["quantity"], line["line_cents"], line["discount_cents"]) == (
+        "CAB-2",
+        10,
+        30000,
+        3000,
+    )
+    assert corrected["total_cents"] == 27000
+    assert [
+        (c["line"], c["field"], c["old_value"], c["new_value"]) for c in corrected["history"]
+    ] == [
+        (1, "sku", None, "CAB-2"),
+        (None, "status", "ready_for_review", "reviewed"),
+    ]
+    assert conflicted["later_requests"] == ["R13"]
+    assert [f["code"] for f in conflicted["findings"]] == ["conflicting_request"]
+    assert conflicted["total_cents"] == 15000  # as drafted from R5; R13 was signed off, not merged
+
+
 async def test_a_failed_request_shows_its_labelled_model_calls(
     pages: AsyncClient, settings: Settings
 ) -> None:

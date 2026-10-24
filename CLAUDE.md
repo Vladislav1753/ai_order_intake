@@ -107,6 +107,8 @@ empty value reopens the field. Findings the checks can't re-derive carry over:
 `conflicting_request` stays, `unverified_sku` goes once the reviewer sets that line's SKU.
 `ReviewService.mark_reviewed` is the explicit sign-off: refused while the draft needs
 clarification, logged as a `status` row, and undone by any later correction.
+`ExportService.reviewed` (`GET /exports/reviewed.json`) exports `reviewed` drafts only, never
+ones that merely passed the checks.
 
 ### Tables
 
