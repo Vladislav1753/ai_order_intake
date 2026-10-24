@@ -20,4 +20,4 @@ Hand arithmetic for the priced cases:
 - Case 4: 2 × 2,000 = 4,000 (the supplied seed expectation).
 - Case 5: 10 × 3,000 = 30,000; 10% = 3,000.0 → 3,000; 30,000 − 3,000 = 27,000.
 
-Verified by hand: [ ] name ____________ date ____________
+Verified by hand: [X] name Vladyslav Baklanov date 24.10.2026
