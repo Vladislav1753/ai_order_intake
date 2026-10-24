@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.enums import DraftStatus
 from app.db.errors import translates_db_errors
 from app.models import DraftOrder
 
@@ -32,9 +33,8 @@ class DraftRepository:
         )
 
     @translates_db_errors
-    async def list_all(self) -> list[DraftOrder]:
-        return list(
-            await self.session.scalars(
-                select(DraftOrder).order_by(DraftOrder.id).options(selectinload(DraftOrder.lines))
-            )
-        )
+    async def list_all(self, status: DraftStatus | None = None) -> list[DraftOrder]:
+        query = select(DraftOrder).order_by(DraftOrder.id).options(selectinload(DraftOrder.lines))
+        if status is not None:
+            query = query.where(DraftOrder.status == status)
+        return list(await self.session.scalars(query))

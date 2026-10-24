@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums import RequestStatus
 from app.db.errors import translates_db_errors
 from app.models import IncomingRequest
 
@@ -23,7 +24,18 @@ class RequestRepository:
         )
 
     @translates_db_errors
-    async def list_all(self) -> list[IncomingRequest]:
+    async def list_by_order_ref(self, order_ref: str) -> list[IncomingRequest]:
         return list(
-            await self.session.scalars(select(IncomingRequest).order_by(IncomingRequest.id))
+            await self.session.scalars(
+                select(IncomingRequest)
+                .where(IncomingRequest.order_ref == order_ref)
+                .order_by(IncomingRequest.id)
+            )
         )
+
+    @translates_db_errors
+    async def list_all(self, status: RequestStatus | None = None) -> list[IncomingRequest]:
+        query = select(IncomingRequest).order_by(IncomingRequest.id)
+        if status is not None:
+            query = query.where(IncomingRequest.status == status)
+        return list(await self.session.scalars(query))

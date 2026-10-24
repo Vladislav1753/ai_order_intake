@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Operations queue</h1>
+<p class="muted small">
+  {{ summary.requests }} requests received → {{ summary.new_orders }} draft orders.
+  {{ summary.duplicates | length }} duplicate and {{ summary.conflicts | length }} conflicting
+  requests are not counted as new orders.
+  "Ready for review" means the draft passed every check; "Reviewed" means a person signed it off.
+</p>
+
+<div class="tiles">
+  {% for name in filters %}
+  <a class="tile{% if status == name %} active{% endif %}" href="/?status={{ name }}">
+    <span class="badge s-{{ name }}">{{ STATUS_LABELS[name] }}</span>
+    <b>{{ summary.counts[name] }}</b>
+    <span class="muted small">{% if name == "failed" %}requests{% else %}orders{% endif %}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="grid queue">
+  <section class="card">
+    <h2>Queue{% if status %}: {{ STATUS_LABELS[status] }}{% endif %}</h2>
+    <nav class="filters">
+      <a href="/" class="{% if not status %}active{% endif %}">All</a>
+      {% for name in filters %}
+      <a href="/?status={{ name }}" class="{% if status == name %}active{% endif %}">{{ STATUS_LABELS[name] }} ({{ summary.counts[name] }})</a>
+      {% endfor %}
+    </nav>
+    <table>
+      <thead><tr><th>Status</th><th>Order</th><th>Lines</th><th>Why</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td><span class="badge s-{{ item.status }}">{{ STATUS_LABELS[item.status] }}</span></td>
+          <td>
+            <a href="/{{ 'drafts' if item.kind == 'draft' else 'requests' }}/{{ item.id }}">{{ item.order_ref or "(no order ref)" }}</a>
+          </td>
+          <td>{{ item.summary }}</td>
+          <td>{% for code in item.reasons %}<span class="reason">{{ REASON_LABELS.get(code, code) }}</span>{% endfor %}</td>
+          <td class="num">{{ item.total_cents | money if item.kind == "draft" else "—" }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">Nothing here. Run <code>just process</code> to load the inbox.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <div>
+    <section class="card">
+      <h2>Open exception reasons</h2>
+      {% if summary.reasons %}
+      <table>
+        {% for code, count in summary.reasons %}
+        <tr><td>{{ REASON_LABELS.get(code, code) }}</td><td class="num">{{ count }}</td></tr>
+        {% endfor %}
+      </table>
+      <p class="muted small">Orders not yet reviewed, counted once per reason, plus failed requests.</p>
+      {% else %}
+      <p class="muted">None.</p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Not new orders</h2>
+      <table>
+        {% for r in summary.duplicates + summary.conflicts %}
+        <tr>
+          <td><a href="/requests/{{ r.id }}">{{ r.external_id }}</a></td>
+          <td><span class="badge s-{{ r.status.value }}">{{ STATUS_LABELS[r.status.value] }}</span></td>
+          <td class="small">same order ref as {{ r.order_ref }}{% if r.status.value == "conflict" %}, different text{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td class="muted">None.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

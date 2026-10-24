@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Request {{ detail.request.external_id }}{% endblock %}
+{% block content %}
+{% set r = detail.request %}
+<p class="small"><a href="/">← Queue</a></p>
+<h1>Request {{ r.external_id }} <span class="badge s-{{ r.status.value }}">{{ STATUS_LABELS[r.status.value] }}</span></h1>
+<p class="muted small">Received {{ r.created_at | when }} · processed {{ r.processed_at | when }}</p>
+
+{% if r.error %}<div class="error" role="alert"><b>{{ REASON_LABELS[detail.reason] if detail.reason else "Error" }}.</b> {{ r.error }}</div>{% endif %}
+
+<div class="grid">
+  <section class="card">
+    <h2>As received</h2>
+    <dl class="meta">
+      <dt>Order ref</dt><dd>{{ r.order_ref or "(none)" }}</dd>
+      <dt>Source</dt><dd>{{ r.source_path or "data/seed/seed.json" }}</dd>
+      <dt>Content hash</dt><dd class="small">{{ r.content_hash[:16] }}…</dd>
+      <dt>Draft order</dt>
+      <dd>{% if detail.draft %}<a href="/drafts/{{ detail.draft.id }}">{{ detail.draft.order_ref }}</a>
+        <span class="badge s-{{ detail.draft.status.value }}">{{ STATUS_LABELS[detail.draft.status.value] }}</span>
+        {% if r.status.value in ("duplicate", "conflict") %}<span class="muted small">(created from an earlier request; this one added no order)</span>{% endif %}
+        {% else %}none{% endif %}</dd>
+    </dl>
+    <pre class="text">{{ r.text }}</pre>
+  </section>
+
+  <section class="card">
+    <h2>Model calls</h2>
+    <p class="muted small">
+      <span class="badge src-live">live</span> a new call to the provider ·
+      <span class="badge src-cached">cached</span> a saved real response replayed ·
+      <span class="badge src-simulated-failure">simulated-failure</span> a deliberate test failure
+    </p>
+    <table>
+      <thead><tr><th>Step</th><th>Source</th><th>Model</th><th>What happened</th></tr></thead>
+      {% for call in detail.calls %}
+      <tr>
+        <td>{{ call.step }}</td>
+        <td><span class="badge src-{{ call.source }}">{{ call.source }}</span></td>
+        <td class="small">{{ call.model or "—" }}<br><span class="muted">{{ call.prompt_version }}</span></td>
+        <td class="small">{{ call.outcome }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="muted">
+        {% if r.status.value in ("duplicate", "conflict") %}None: duplicates and conflicts are decided in code, before any model call.
+        {% else %}None.{% endif %}
+      </td></tr>
+      {% endfor %}
+    </table>
+  </section>
+</div>
+{% endblock %}

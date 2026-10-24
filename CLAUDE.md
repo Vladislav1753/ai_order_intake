@@ -102,7 +102,11 @@ Everything that does I/O is `async def`: routes, services, repositories, provide
 
 **Reviewer correction** (`ReviewService.correct`): apply the field change, re-run validate +
 price + status (no model call), and append a `corrections` row (field, old, new, status before
-and after).
+and after). Only a line's `sku` (a catalog SKU) and `quantity` (individual items) change; an
+empty value reopens the field. Findings the checks can't re-derive carry over:
+`conflicting_request` stays, `unverified_sku` goes once the reviewer sets that line's SKU.
+`ReviewService.mark_reviewed` is the explicit sign-off: refused while the draft needs
+clarification, logged as a `status` row, and undone by any later correction.
 
 ### Tables
 

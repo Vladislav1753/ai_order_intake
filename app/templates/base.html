@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Order queue{% endblock %} · Order Intake</title>
+  {# Forms and links work without JavaScript; htmx only swaps pages in place. 422 responses
+     carry the page with the rejected change explained, so they are swapped too. #}
+  <meta name="htmx-config" content='{"responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "422", "swap": true}, {"code": "[45]..", "swap": false, "error": true}]}'>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --fg: #1d2330; --muted: #5d6675; --line: #dde1e7; --bg: #f6f7f9; --card: #fff;
+      --accent: #2557c7; --ok: #1d7a46; --warn: #a15c00; --bad: #b42318; --info: #5a3fb0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); }
+    header.top { background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 24px; display: flex; gap: 16px; align-items: baseline; }
+    header.top a.brand { font-weight: 650; color: var(--fg); text-decoration: none; }
+    header.top span { color: var(--muted); font-size: 13px; }
+    main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 48px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 0 0 10px; }
+    a { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+    .scroll { overflow-x: auto; }
+    .grid.queue { grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr); }
+    @media (max-width: 1000px) { .grid, .grid.queue { grid-template-columns: 1fr; } }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .tile { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--fg); }
+    .tile b { display: block; font-size: 24px; }
+    .tile.active { outline: 2px solid var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 600; }
+    td.num, th.num, td.nowrap { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.nowrap { text-align: left; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; white-space: nowrap; }
+    .s-ready_for_review, .s-drafted { color: var(--ok); }
+    .s-reviewed { color: var(--accent); }
+    .s-needs_clarification, .s-needs_review, .s-conflict { color: var(--warn); }
+    .s-failed { color: var(--bad); }
+    .s-duplicate, .s-pending { color: var(--muted); }
+    .src-live { color: var(--ok); } .src-cached { color: var(--info); } .src-simulated-failure { color: var(--bad); }
+    .reason { display: inline-block; background: #fff4e5; color: #7a4600; border-radius: 4px; padding: 0 6px; font-size: 12px; margin: 1px 2px 1px 0; }
+    pre.text { white-space: pre-wrap; font: 14px/1.45 ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; margin: 0; }
+    .error { background: #fdecea; border: 1px solid #f5c2bd; color: var(--bad); border-radius: 6px; padding: 10px 12px; margin-bottom: 16px; }
+    ul.findings { margin: 0; padding-left: 18px; }
+    .changed { background: #e8f0ff; border-radius: 4px; padding: 0 4px; }
+    .was { color: var(--muted); text-decoration: line-through; font-size: 12px; }
+    form.inline { display: inline-flex; gap: 6px; align-items: center; margin: 2px 12px 2px 0; }
+    select, input[type=number] { font: inherit; padding: 3px 6px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+    input[type=number] { width: 90px; }
+    button { font: inherit; padding: 3px 10px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 4px; cursor: pointer; }
+    button.secondary { background: #fff; color: var(--accent); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .filters a { text-decoration: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 13px; }
+    .filters a.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 10px; font-size: 13px; }
+    dl.meta dt { color: var(--muted); }
+    dl.meta dd { margin: 0; }
+  </style>
+</head>
+<body hx-boost="true">
+  <header class="top">
+    <a class="brand" href="/">Order Intake</a>
+    <span>Local drafts only: nothing is sent to customers or an ERP.</span>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

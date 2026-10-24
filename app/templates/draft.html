@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Order {{ detail.draft.order_ref }}{% endblock %}
+{% block content %}
+{% set d = detail.draft %}
+<p class="small"><a href="/">← Queue</a></p>
+<h1>Order {{ d.order_ref }} <span class="badge s-{{ d.status.value }}">{{ STATUS_LABELS[d.status.value] }}</span></h1>
+<p class="muted small">
+  Draft {{ d.id }} · created {{ d.created_at | when }} · updated {{ d.updated_at | when }}
+  {% if d.reviewed_at %} · signed off {{ d.reviewed_at | when }}{% endif %}
+</p>
+{% if error %}<div class="error" role="alert"><b>Not saved.</b> {{ error }}</div>{% endif %}
+
+<div class="grid">
+  <div>
+    <section class="card">
+      <h2>Original request</h2>
+      <dl class="meta">
+        <dt>Request</dt><dd><a href="/requests/{{ detail.source.id }}">{{ detail.source.external_id }}</a></dd>
+        <dt>Source</dt><dd>{{ detail.source.source_path or "data/seed/seed.json" }}</dd>
+        <dt>Received</dt><dd>{{ detail.source.created_at | when }}</dd>
+        <dt>Model</dt>
+        <dd>
+          {{ d.proposal_json.model }} · prompt {{ d.proposal_json.prompt_version }} ·
+          {% for source, count in detail.call_sources.items() %}<span class="badge src-{{ source }}">{{ count }} {{ source }}</span> {% endfor %}
+        </dd>
+      </dl>
+      <pre class="text">{{ detail.source.text }}</pre>
+    </section>
+
+    {% for other in detail.others %}
+    <section class="card">
+      <h2>Later request <a href="/requests/{{ other.id }}">{{ other.external_id }}</a>
+        <span class="badge s-{{ other.status.value }}">{{ STATUS_LABELS[other.status.value] }}</span></h2>
+      <p class="muted small">
+        {% if other.status.value == "duplicate" %}Same text as the original: no new order was created.
+        {% else %}Same order reference, different text: check whether it changes this order.{% endif %}
+      </p>
+      <pre class="text">{{ other.text }}</pre>
+    </section>
+    {% endfor %}
+
+    <section class="card">
+      <h2>Catalog searches</h2>
+      <p class="muted small">What the model looked up. Only a search that returned exactly one product can back a SKU.</p>
+      <table>
+        <thead><tr><th>Query</th><th>Returned</th></tr></thead>
+        {% for search in d.proposal_json.searches %}
+        <tr>
+          <td>“{{ search.query }}”</td>
+          <td>{% for hit in search.results %}{{ hit.sku }} <span class="muted small">{{ hit.name }}</span>{% if not loop.last %}, {% endif %}{% else %}<span class="muted">nothing</span>{% endfor %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" class="muted">No searches.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+  </div>
+
+  <div>
+    <section class="card">
+      <h2>Proposed order</h2>
+      {% if detail.order_findings or detail.lines | selectattr("findings") | list %}
+      <ul class="findings">
+        {% for finding in detail.order_findings %}<li><span class="reason">{{ REASON_LABELS.get(finding.code.value, finding.code.value) }}</span> {{ finding.message }}</li>{% endfor %}
+        {% for lv in detail.lines %}{% for finding in lv.findings %}
+        <li>Line {{ lv.line.position }}: <span class="reason">{{ REASON_LABELS.get(finding.code.value, finding.code.value) }}</span> {{ finding.message }}</li>
+        {% endfor %}{% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted small">All checks passed: every line has a catalog SKU backed by a search and a quantity of individual items.</p>
+      {% endif %}
+
+      <div class="scroll">
+      <table style="margin-top: 10px">
+        <thead><tr><th>#</th><th>Customer wrote</th><th>SKU</th><th class="num">Items</th><th>Unit</th>
+          <th class="num">Unit price</th><th class="num">Line</th><th class="num">Discount</th><th class="num">Total</th></tr></thead>
+        <tbody>
+        {% for lv in detail.lines %}{% set line = lv.line %}
+        <tr id="line-{{ line.position }}">
+          <td>{{ line.position }}</td>
+          <td>“{{ line.customer_text }}”</td>
+          <td class="nowrap">
+            {% if "sku" in lv.changed %}<span class="changed">{{ line.sku or "—" }}</span><br><span class="was">model: {{ lv.proposed.sku or "none" }}</span>
+            {% else %}{{ line.sku or "—" }}{% endif %}
+          </td>
+          <td class="num">
+            {% if "quantity" in lv.changed %}<span class="changed">{{ line.quantity or "—" }}</span><br><span class="was">model: {{ lv.proposed.quantity or "none" }}</span>
+            {% else %}{{ line.quantity or "—" }}{% endif %}
+          </td>
+          <td>{{ line.unit_label or "—" }}</td>
+          <td class="num">{{ line.unit_cents | money }}</td>
+          <td class="num">{{ line.line_cents | money }}</td>
+          <td class="num">{{ line.discount_cents | money }}</td>
+          <td class="num">{{ line.total_cents | money }}</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td colspan="8" class="small">
+            <div class="muted">
+              {% if line.sku and line.sku == lv.proposed.sku %}Catalog support: search “{{ lv.proposed.matched_query }}” returned only {{ line.sku }}.
+              {% elif line.sku %}Set by the reviewer.
+              {% elif lv.proposed.candidates %}Matches: {% for hit in lv.proposed.candidates %}{{ hit.sku }} ({{ hit.name }}){% if not loop.last %}, {% endif %}{% endfor %}.
+              {% else %}No catalog match.{% endif %}
+            </div>
+            <form class="inline" method="post" action="/drafts/{{ d.id }}/corrections" hx-swap="innerHTML show:none">
+              <input type="hidden" name="line" value="{{ line.position }}">
+              <input type="hidden" name="field" value="sku">
+              <label for="sku-{{ line.position }}">SKU</label>
+              <select id="sku-{{ line.position }}" name="value">
+                <option value="">— unresolved —</option>
+                {% for product in detail.products %}
+                <option value="{{ product.sku }}"{% if product.sku == line.sku %} selected{% endif %}>{{ product.sku }} · {{ product.name }} · {{ product.unit_cents | money }}</option>
+                {% endfor %}
+              </select>
+              <button class="secondary">Save SKU</button>
+            </form>
+            <form class="inline" method="post" action="/drafts/{{ d.id }}/corrections" hx-swap="innerHTML show:none">
+              <input type="hidden" name="line" value="{{ line.position }}">
+              <input type="hidden" name="field" value="quantity">
+              <label for="quantity-{{ line.position }}">Items</label>
+              <input id="quantity-{{ line.position }}" type="number" name="value" min="1" step="1" value="{{ line.quantity or '' }}">
+              <button class="secondary">Save quantity</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="8" class="num">Subtotal</td><td class="num">{{ d.subtotal_cents | money }}</td></tr>
+          <tr><td colspan="8" class="num">Bulk discount</td><td class="num">{{ d.discount_cents | money }}</td></tr>
+          <tr><td colspan="8" class="num"><b>Total</b></td><td class="num"><b>{{ d.total_cents | money }}</b></td></tr>
+        </tfoot>
+      </table>
+      </div>
+      <p class="muted small">Totals include priced lines only. Items are individual items; box and pack sizes are never assumed.</p>
+
+      {% if d.status.value != "reviewed" %}
+      <form method="post" action="/drafts/{{ d.id }}/review" hx-swap="innerHTML show:none">
+        <button{% if d.status.value == "needs_clarification" %} disabled title="Resolve every line first"{% endif %}>Mark reviewed</button>
+        <span class="muted small">
+          {% if d.status.value == "needs_clarification" %}Every line needs a SKU and a quantity first.
+          {% elif d.status.value == "needs_review" %}Signs off the findings above as checked by you.
+          {% else %}Confirms a person checked this draft.{% endif %}
+        </span>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Clarification draft</h2>
+      {% if d.clarification_text %}
+      <p class="muted small">Not sent: copy it into your mail client if it is still needed.</p>
+      <pre class="text">{{ d.clarification_text }}</pre>
+      {% else %}
+      <p class="muted">No questions for the customer.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>History</h2>
+      <table>
+        <thead><tr><th>When</th><th>Change</th><th>Status</th></tr></thead>
+        {% for c in d.corrections %}
+        {% set changed_line = detail.lines | selectattr("line.id", "equalto", c.draft_line_id) | first %}
+        <tr>
+          <td class="small">{{ c.created_at | when }}</td>
+          <td>
+            {% if c.field == "status" %}Marked reviewed
+            {% else %}Line {{ changed_line.line.position if changed_line else "?" }} {{ c.field }}: {{ c.old_value or "empty" }} → {{ c.new_value or "empty" }}{% endif %}
+          </td>
+          <td>
+            <span class="badge s-{{ c.status_before.value }}">{{ STATUS_LABELS[c.status_before.value] }}</span> →
+            <span class="badge s-{{ c.status_after.value }}">{{ STATUS_LABELS[c.status_after.value] }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">No corrections yet. The draft is exactly as the model proposed and the checks priced it.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -18,6 +18,7 @@ from app.models import DraftOrder, IncomingRequest
 from app.repositories.drafts import DraftRepository
 from app.repositories.requests import RequestRepository
 from app.services.inbox import load_requests
+from tests.client import app_client
 from tests.integration.conftest import run_alembic
 
 EXPECTED: dict[str, Any] = json.loads(
@@ -148,6 +149,52 @@ async def test_reprocessing_everything_creates_nothing_new(
     assert len(drafts) == EXPECTED["aggregates"]["drafts"]
 
 
-@pytest.mark.skip(reason="reviewer corrections (ReviewService) are the next build step")
-async def test_reviewer_correction_c1() -> None:
-    raise NotImplementedError
+async def test_reviewer_correction_c1(database: str) -> None:
+    """C1 through the review screen, then a restart: the saved draft, its re-run checks and
+    the history entry must match the independently priced expectation."""
+    _, drafts = await process_everything(database)
+    case = EXPECTED["corrections"][0]
+    draft_id = drafts[case["order_ref"]].id
+    change = case["change"]
+    settings = Settings(_env_file=None, model_mode="replay", database_url=database)  # type: ignore[call-arg]
+
+    async with app_client(settings) as client:
+        saved = await client.post(
+            f"/drafts/{draft_id}/corrections",
+            data={"line": change["line"], "field": change["field"], "value": change["to"]},
+        )
+    async with app_client(settings) as client:  # restarted
+        page = await client.get(f"/drafts/{draft_id}")
+
+    assert saved.status_code == 303
+    assert page.status_code == 200
+    assert f"Line {change['line']} {change['field']}: empty → {change['to']}" in page.text
+    engine = make_engine(database)
+    try:
+        async with make_sessionmaker(engine)() as session:
+            draft = await DraftRepository(session).get(draft_id)
+            statuses = Counter(d.status.value for d in await DraftRepository(session).list_all())
+    finally:
+        await engine.dispose()
+    assert draft is not None
+    fields = ("sku", "quantity", "unit_cents", "line_cents", "discount_cents", "total_cents")
+    assert [{f: getattr(line, f) for f in fields} for line in draft.lines] == case["lines_after"]
+    assert (draft.subtotal_cents, draft.discount_cents, draft.total_cents) == (
+        case["subtotal_cents"],
+        case["discount_cents"],
+        case["total_cents"],
+    )
+    assert draft.status == case["status_after"]
+    assert draft.findings == []
+    assert draft.proposal_json["lines"][0]["sku"] == change["from"]  # the proposal is kept
+    (history,) = draft.corrections
+    assert (history.field, history.old_value, history.new_value) == (
+        change["field"],
+        change["from"],
+        change["to"],
+    )
+    assert (history.status_before, history.status_after) == (
+        case["status_before"],
+        case["status_after"],
+    )
+    assert dict(statuses) == EXPECTED["aggregates"]["draft_status_after_corrections"]

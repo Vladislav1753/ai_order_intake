@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from app.api.errors import register_error_handlers
 from app.core.config import Settings, get_settings
 from app.db.session import make_engine, make_sessionmaker
-from app.routers import health
+from app.routers import drafts, health, queue
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -23,6 +23,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Order Intake", debug=settings.debug, lifespan=lifespan)
     register_error_handlers(app)
     app.include_router(health.router)
+    app.include_router(queue.router)
+    app.include_router(drafts.router)
     return app
 
 
