@@ -22,6 +22,10 @@ migrate:
 seed:
     uv run python -m app.cli seed
 
+# Check data/expected against the inputs and rules (independent of the app)
+check-data:
+    uv run python scripts/check_expected.py
+
 # Process the seed requests and data/inbox from saved responses (no API key needed)
 process:
     uv run python -m app.cli process --mode replay

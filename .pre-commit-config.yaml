@@ -9,6 +9,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: expected-results
+        name: data/expected matches inputs and rules
+        entry: uv run python scripts/check_expected.py
+        language: system
+        pass_filenames: false
+        files: ^(data/|scripts/check_expected\.py)
       - id: ruff-format
         name: ruff format
         entry: uv run ruff format

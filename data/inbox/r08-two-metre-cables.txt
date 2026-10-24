@@ -1,0 +1,10 @@
+From: tom.becker@harbor.example
+Subject: Longer cables
+Request-Id: R8
+Order-Ref: O8
+
+Hi,
+
+Please send four of the 2 m USB-C cables.
+
+Tom

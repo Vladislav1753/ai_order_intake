@@ -1,0 +1,11 @@
+From: priya.nair@lakeside.example
+Subject: Order for workshop
+Request-Id: R7
+Order-Ref: O7
+
+Hello,
+
+We need 10 CAB-1 cables and one USB hub for the workshop.
+
+Best,
+Priya

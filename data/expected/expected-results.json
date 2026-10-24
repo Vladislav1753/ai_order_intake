@@ -1,0 +1,200 @@
+{
+  "about": "Expected behaviour for every input in data/seed/seed.json and data/inbox/, derived by hand from data/seed/domain.md and checked by scripts/check_expected.py. Never copied from application output. Prices in integer USD cents. Finding codes are the application's names for the domain reasons in `needs`.",
+  "requests": [
+    {
+      "id": "R1",
+      "source": "data/seed/seed.json",
+      "order_ref": "O1",
+      "rules": ["domain.md 1", "domain.md 2", "domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "ready_for_review",
+      "lines": [{"sku": "CAB-1", "quantity": 2, "unit_cents": 2000, "line_cents": 4000, "discount_cents": 0, "total_cents": 4000}],
+      "subtotal_cents": 4000,
+      "discount_cents": 0,
+      "total_cents": 4000,
+      "findings": [],
+      "note": "Supplied seed case; matches expected-seed-results.json (4,000 cents)."
+    },
+    {
+      "id": "R2",
+      "source": "data/seed/seed.json",
+      "order_ref": "O2",
+      "rules": ["domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_clarification",
+      "lines": [{"sku": null, "quantity": 1}],
+      "total_cents": 0,
+      "findings": ["unknown_product"],
+      "needs": "Clarify the product: no catalog entry is a Moon adapter. Must not be mapped to another item."
+    },
+    {
+      "id": "R3",
+      "source": "data/seed/seed.json",
+      "order_ref": "O3",
+      "rules": ["domain.md 1", "domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_clarification",
+      "lines": [{"sku": null, "candidates": ["CAB-1", "CAB-2"], "quantity": null}],
+      "total_cents": 0,
+      "findings": ["ambiguous_product", "non_individual_unit"],
+      "needs": "Clarify which cable (CAB-1 or CAB-2) and how many individual items; box size is never inferred."
+    },
+    {
+      "id": "R4",
+      "source": "data/seed/seed.json",
+      "order_ref": "O1",
+      "rules": ["domain.md 4"],
+      "request_status": "duplicate",
+      "same_order_as": "R1",
+      "new_drafts": 0,
+      "note": "Identical text and order reference as R1: no second draft, not counted as a new order."
+    },
+    {
+      "id": "R5",
+      "source": "data/inbox/r05-usb-hubs.txt",
+      "order_ref": "O5",
+      "rules": ["domain.md 2", "domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_review",
+      "lines": [{"sku": "HUB-1", "quantity": 3, "unit_cents": 5000, "line_cents": 15000, "discount_cents": 0, "total_cents": 15000}],
+      "subtotal_cents": 15000,
+      "discount_cents": 0,
+      "total_cents": 15000,
+      "findings": ["conflicting_request"],
+      "note": "On its own a ready draft (\"USB hubs\" matches only HUB-1). R13 later changes this order, so after the run the draft needs review; its totals stay as drafted from R5."
+    },
+    {
+      "id": "R6",
+      "source": "data/inbox/r06-bulk-cab2.json",
+      "order_ref": "O6",
+      "rules": ["domain.md 2"],
+      "request_status": "drafted",
+      "draft_status": "ready_for_review",
+      "lines": [{"sku": "CAB-2", "quantity": 12, "unit_cents": 3000, "line_cents": 36000, "discount_cents": 3600, "total_cents": 32400}],
+      "subtotal_cents": 36000,
+      "discount_cents": 3600,
+      "total_cents": 32400,
+      "findings": [],
+      "note": "Bulk line: 12 >= 10 items, 10% of 36,000 = 3,600. JSON template format."
+    },
+    {
+      "id": "R7",
+      "source": "data/inbox/r07-cables-and-hub.txt",
+      "order_ref": "O7",
+      "rules": ["domain.md 2"],
+      "request_status": "drafted",
+      "draft_status": "ready_for_review",
+      "lines": [
+        {"sku": "CAB-1", "quantity": 10, "unit_cents": 2000, "line_cents": 20000, "discount_cents": 2000, "total_cents": 18000},
+        {"sku": "HUB-1", "quantity": 1, "unit_cents": 5000, "line_cents": 5000, "discount_cents": 0, "total_cents": 5000}
+      ],
+      "subtotal_cents": 25000,
+      "discount_cents": 2000,
+      "total_cents": 23000,
+      "findings": [],
+      "note": "Two lines; the discount applies to the 10-cable line only (worked example: 10 CAB-1 = 18,000)."
+    },
+    {
+      "id": "R8",
+      "source": "data/inbox/r08-two-metre-cables.txt",
+      "order_ref": "O8",
+      "rules": ["domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "ready_for_review",
+      "lines": [{"sku": "CAB-2", "quantity": 4, "unit_cents": 3000, "line_cents": 12000, "discount_cents": 0, "total_cents": 12000}],
+      "subtotal_cents": 12000,
+      "discount_cents": 0,
+      "total_cents": 12000,
+      "findings": [],
+      "note": "Matched by an unambiguous catalog description (\"2 m USB-C cable\"), no SKU given."
+    },
+    {
+      "id": "R9",
+      "source": "data/inbox/r09-some-hubs.txt",
+      "order_ref": "O9",
+      "rules": ["domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_clarification",
+      "lines": [{"sku": "HUB-1", "quantity": null}],
+      "total_cents": 0,
+      "findings": ["ambiguous_quantity"],
+      "needs": "Clarify how many hubs: \"some\" is not a quantity."
+    },
+    {
+      "id": "R10",
+      "source": "data/inbox/r10-cable-packs.txt",
+      "order_ref": "O10",
+      "rules": ["domain.md 1", "domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_clarification",
+      "lines": [{"sku": "CAB-1", "quantity": null, "unit": "pack"}],
+      "total_cents": 0,
+      "findings": ["non_individual_unit"],
+      "needs": "Clarify the number of individual cables; pack size is unknown (assumption A1)."
+    },
+    {
+      "id": "R11",
+      "source": "data/inbox/r11-simulated-failure.txt",
+      "order_ref": "O11",
+      "rules": [],
+      "request_status": "failed",
+      "new_drafts": 0,
+      "model_call_source": "simulated-failure",
+      "note": "Deliberate simulated model failure (replays/simulated-failures.json). Shown as failed; the rest of the batch continues."
+    },
+    {
+      "id": "R12",
+      "source": "data/inbox/r12-cables-length-unclear.txt",
+      "order_ref": "O12",
+      "rules": ["domain.md 3"],
+      "request_status": "drafted",
+      "draft_status": "needs_clarification",
+      "lines": [{"sku": null, "candidates": ["CAB-1", "CAB-2"], "quantity": 10}],
+      "total_cents": 0,
+      "findings": ["ambiguous_product"],
+      "needs": "Clarify which cable: \"USB-C cables\" matches CAB-1 and CAB-2. The quantity (10) is clear. Used by correction C1."
+    },
+    {
+      "id": "R13",
+      "source": "data/inbox/r13-change-of-plan.txt",
+      "order_ref": "O5",
+      "rules": ["domain.md 4"],
+      "request_status": "conflict",
+      "new_drafts": 0,
+      "note": "Same order reference as R5 with different text: no new draft; the O5 draft is flagged for review (assumption A3)."
+    },
+    {
+      "id": "R14",
+      "source": "data/inbox/r14-missing-order-ref.txt",
+      "order_ref": null,
+      "rules": [],
+      "request_status": "failed",
+      "new_drafts": 0,
+      "deliberately_invalid": true,
+      "note": "Unusable input: no Order-Ref header. Reported as failed with the reason; other requests still run."
+    }
+  ],
+  "corrections": [
+    {
+      "id": "C1",
+      "order_ref": "O12",
+      "rules": ["domain.md 2", "domain.md 3"],
+      "scenario": "The customer answers the clarification: they want the 2 m cable. The reviewer sets line 1 to CAB-2 (fictional reply).",
+      "change": {"line": 1, "field": "sku", "from": null, "to": "CAB-2"},
+      "status_before": "needs_clarification",
+      "status_after": "ready_for_review",
+      "lines_after": [{"sku": "CAB-2", "quantity": 10, "unit_cents": 3000, "line_cents": 30000, "discount_cents": 3000, "total_cents": 27000}],
+      "subtotal_cents": 30000,
+      "discount_cents": 3000,
+      "total_cents": 27000,
+      "note": "The correction re-runs validation and pricing: 10 items reach the bulk threshold, so 10% of 30,000 = 3,000 is discounted."
+    }
+  ],
+  "aggregates": {
+    "requests": 14,
+    "request_status": {"drafted": 10, "duplicate": 1, "conflict": 1, "failed": 2},
+    "drafts": 10,
+    "draft_status_after_processing": {"ready_for_review": 4, "needs_clarification": 5, "needs_review": 1},
+    "draft_status_after_corrections": {"ready_for_review": 5, "needs_clarification": 4, "needs_review": 1}
+  }
+}

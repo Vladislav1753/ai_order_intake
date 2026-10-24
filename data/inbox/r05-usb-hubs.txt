@@ -1,0 +1,11 @@
+From: dana.weller@northwind.example
+Subject: Hubs for the new office
+Request-Id: R5
+Order-Ref: O5
+
+Hi team,
+
+Could you send three USB hubs?
+
+Thanks,
+Dana

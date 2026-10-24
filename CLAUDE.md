@@ -233,6 +233,7 @@ just migrate      # uv run alembic upgrade head
 just seed         # uv run python -m app.cli seed (catalog from data/seed/seed.json)
 just process      # process seed requests + data/inbox from replays/ (no key needed)
 just record       # same with real model calls; saves each response to replays/
+just check-data   # check data/expected against inputs and rules (independent of the app)
 just revision "<message>"   # uv run alembic revision --autogenerate -m "<message>"
 ```
 

@@ -1,0 +1,11 @@
+From: marc.dubois@willow.example
+Subject: Cables for the training room
+Request-Id: R12
+Order-Ref: O12
+
+Hi,
+
+Please send 10 USB-C cables.
+
+Thanks,
+Marc

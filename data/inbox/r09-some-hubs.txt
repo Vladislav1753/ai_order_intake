@@ -1,0 +1,10 @@
+From: lena.ortiz@summit.example
+Subject: Hubs
+Request-Id: R9
+Order-Ref: O9
+
+Hello,
+
+Please send some HUB-1 hubs for the new office.
+
+Lena

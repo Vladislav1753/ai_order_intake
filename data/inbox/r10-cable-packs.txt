@@ -1,0 +1,10 @@
+From: ken.ito@maple.example
+Subject: Cable packs
+Request-Id: R10
+Order-Ref: O10
+
+Hi,
+
+Send 2 packs of CAB-1, please.
+
+Ken
