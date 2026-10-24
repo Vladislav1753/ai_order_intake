@@ -22,6 +22,14 @@ migrate:
 seed:
     uv run python -m app.cli seed
 
+# Process the seed requests and data/inbox from saved responses (no API key needed)
+process:
+    uv run python -m app.cli process --mode replay
+
+# Process with real model calls and save each response to replays/ (needs MODEL_API_KEY)
+record:
+    uv run python -m app.cli process --mode live
+
 # Generate a migration from model changes, e.g. just revision "add attachments"
 revision message:
     uv run alembic revision --autogenerate -m "{{message}}"

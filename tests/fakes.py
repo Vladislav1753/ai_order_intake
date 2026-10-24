@@ -58,9 +58,12 @@ def item(
     quantity: int | None,
     unit: str | None = "item",
     candidates: tuple[str, ...] = (),
+    query: str | None = None,
 ) -> dict[str, Any]:
+    """One answer line. `query` is the search the model cites for `sku` (defaults to the SKU)."""
     return {
         "customer_text": text,
+        "matched_query": query or sku,
         "sku": sku,
         "candidate_skus": list(candidates),
         "quantity": quantity,

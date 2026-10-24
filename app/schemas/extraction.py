@@ -49,6 +49,9 @@ class ExtractedLine(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     customer_text: str = Field(description="The customer's words for this item, with quantity.")
+    matched_query: str | None = Field(
+        description="The exact query of the search whose only result is sku; null if sku is."
+    )
     sku: str | None = Field(
         description="Only a SKU that a search returned as its single result; otherwise null."
     )

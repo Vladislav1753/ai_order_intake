@@ -2,7 +2,7 @@
 
 import hashlib
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +32,9 @@ class IntakeResult:
     status: RequestStatus
     draft_status: DraftStatus | None = None
     error: str | None = None
+    # True when an earlier run already processed this request: nothing was done this time,
+    # so it must not be counted as a new draft (or a new duplicate) again.
+    already_processed: bool = False
 
 
 def content_hash(text: str) -> str:
@@ -60,7 +63,7 @@ class IntakeService:
             RequestStatus.FAILED,
         ):
             draft = await self.drafts.get_by_order_ref(request.order_ref)
-            return self._result(request, draft)
+            return replace(self._result(request, draft), already_processed=True)
         if request is None:
             request = IncomingRequest(
                 external_id=item.id,
@@ -78,6 +81,26 @@ class IntakeService:
         if draft is not None:
             return await self._same_order(request, draft)
         return await self._new_draft(request)
+
+    async def record_unusable(
+        self, *, external_id: str, source_path: str, raw_text: str, error: str
+    ) -> IntakeResult:
+        """Keep a file that couldn't be read as a `failed` request, so the queue shows it."""
+        request = await self.requests.get_by_external_id(external_id)
+        if request is None:
+            request = IncomingRequest(
+                external_id=external_id,
+                order_ref="",
+                text=raw_text,
+                source_path=source_path,
+                content_hash=content_hash(raw_text),
+            )
+            self.requests.add(request)
+        request.status = RequestStatus.FAILED
+        request.error = f"Unusable input: {error}"
+        request.processed_at = utcnow()
+        await self._commit()
+        return self._result(request, None)
 
     async def _same_order(self, request: IncomingRequest, draft: DraftOrder) -> IntakeResult:
         """A second request for an order never creates a draft. Different text is a conflict."""
@@ -142,7 +165,10 @@ class IntakeService:
             },
             findings=[finding.model_dump(mode="json") for finding in checked.findings],
             clarification_text=clarification_text(request.order_ref, checked),
-            lines=[DraftLine(**line.model_dump(exclude={"candidates"})) for line in checked.lines],
+            lines=[
+                DraftLine(**line.model_dump(exclude={"candidates", "matched_query"}))
+                for line in checked.lines
+            ],
         )
         self.drafts.add(draft)
         request.status = RequestStatus.DRAFTED

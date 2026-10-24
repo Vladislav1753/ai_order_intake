@@ -16,10 +16,12 @@ class LineInput(BaseModel):
     """One line before checks, as resolved from the model output or corrected by a reviewer.
 
     `candidates` are the catalog entries that support the line: the single match when `sku`
-    is set, the tied matches when the product is ambiguous.
+    is set, the tied matches when the product is ambiguous. `matched_query` is the search the
+    model cited for the line.
     """
 
     customer_text: str
+    matched_query: str | None = None
     sku: str | None
     quantity: int | None  # individual items
     unit_label: str | None

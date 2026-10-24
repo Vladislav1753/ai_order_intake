@@ -81,9 +81,12 @@ Everything that does I/O is `async def`: routes, services, repositories, provide
 
    Invalid output, an exhausted step budget, a timeout, or an API error means `failed`, and the
    batch continues.
-4. **Validate (code)**: the SKU must be the *only* result of one of this run's `search_catalog`
-   calls (kept in memory during `process`; a SKU picked among tied results goes back to
-   ambiguous; the reviewer may pick any catalog SKU later) and in the catalog,
+4. **Validate (code)**, per line: the line cites its search (`matched_query`), and that search
+   from this run (kept in memory during `process`) must have returned exactly that SKU and
+   share a non-digit word with the line's text, so a match for one item can't be reused for
+   another. A SKU picked among tied results goes back to ambiguous; any other unsupported SKU
+   is an `unverified_sku` finding. The reviewer may pick any catalog SKU later. The SKU must
+   be in the catalog,
    and the quantity must be a positive int of individual items. Unit words such as "box" or
    "pack", and vague amounts, become findings.
 5. **Price (pure function)**: see the domain rules.
@@ -228,6 +231,8 @@ just test         # uv run pytest
 just check        # uv run pre-commit run --all-files
 just migrate      # uv run alembic upgrade head
 just seed         # uv run python -m app.cli seed (catalog from data/seed/seed.json)
+just process      # process seed requests + data/inbox from replays/ (no key needed)
+just record       # same with real model calls; saves each response to replays/
 just revision "<message>"   # uv run alembic revision --autogenerate -m "<message>"
 ```
 

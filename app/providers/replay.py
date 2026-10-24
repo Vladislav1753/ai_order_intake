@@ -35,7 +35,8 @@ class ReplayStore:
     @staticmethod
     def _write(path: Path, record: dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        text = json.dumps(record, indent=2, ensure_ascii=False) + "\n"
+        path.write_text(text, encoding="utf-8", newline="\n")  # same bytes on every OS
 
     @staticmethod
     def _read(path: Path) -> dict[str, Any] | None:

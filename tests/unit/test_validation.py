@@ -14,10 +14,17 @@ def line(
     quantity: int | None = 2,
     unit: QuantityUnit | None = QuantityUnit.ITEM,
     candidates: list[str] | None = None,
-    text: str = "2 cables",
+    text: str = "2 CAB-1 cables",
+    query: str | None = None,
 ) -> ExtractedLine:
+    """A model line citing `query` (by default the SKU itself) as the search that matched it."""
     return ExtractedLine(
-        customer_text=text, sku=sku, candidate_skus=candidates or [], quantity=quantity, unit=unit
+        customer_text=text,
+        matched_query=query or sku,
+        sku=sku,
+        candidate_skus=candidates or [],
+        quantity=quantity,
+        unit=unit,
     )
 
 
@@ -29,19 +36,49 @@ def codes(findings: list[Finding]) -> list[FindingCode]:
     return [finding.code for finding in findings]
 
 
-def test_sku_returned_as_the_only_match_is_kept() -> None:
+def test_sku_its_cited_search_returned_alone_is_kept() -> None:
     lines, findings = resolve_model_lines([line("CAB-1")], [search("CAB-1", CAB_1)])
 
     assert findings == []
     assert lines[0].sku == "CAB-1"
     assert lines[0].candidates == [CAB_1]
+    assert lines[0].matched_query == "CAB-1"
+
+
+def test_cited_query_is_matched_ignoring_case() -> None:
+    lines, _ = resolve_model_lines([line("CAB-1", query="cab-1")], [search("CAB-1", CAB_1)])
+
+    assert lines[0].sku == "CAB-1"
 
 
 def test_sku_picked_among_tied_results_is_left_unresolved() -> None:
-    lines, _ = resolve_model_lines([line("CAB-1")], [search("cable", CAB_1, CAB_2)])
+    lines, findings = resolve_model_lines(
+        [line("CAB-1", text="2 cables", query="cable")], [search("cable", CAB_1, CAB_2)]
+    )
 
+    assert findings == []  # ambiguous, which check_lines reports; not unverified
     assert lines[0].sku is None
     assert lines[0].candidates == [CAB_1, CAB_2]
+
+
+def test_a_match_for_one_item_is_not_reused_for_another() -> None:
+    lines, findings = resolve_model_lines(
+        [line("CAB-1"), line("CAB-1", quantity=3, text="3 of the usual cable")],
+        [search("CAB-1", CAB_1), search("usual cable", CAB_1, CAB_2)],
+    )
+
+    assert [resolved.sku for resolved in lines] == ["CAB-1", None]
+    assert [(f.code, f.line) for f in findings] == [(FindingCode.UNVERIFIED_SKU, 2)]
+    assert "shares no words" in findings[0].message
+
+
+def test_digits_alone_do_not_tie_a_search_to_an_item() -> None:
+    lines, findings = resolve_model_lines(
+        [line("CAB-1", quantity=1, text="1 Moon adapter")], [search("CAB-1", CAB_1)]
+    )
+
+    assert lines[0].sku is None
+    assert codes(findings) == [FindingCode.UNVERIFIED_SKU]
 
 
 def test_sku_no_search_returned_is_rejected() -> None:
@@ -49,6 +86,31 @@ def test_sku_no_search_returned_is_rejected() -> None:
 
     assert lines[0].sku is None
     assert codes(findings) == [FindingCode.UNVERIFIED_SKU]
+    assert "no catalog search returned" in findings[0].message
+
+
+def test_citing_a_search_that_never_ran_is_rejected() -> None:
+    lines, findings = resolve_model_lines(
+        [line("CAB-1", query="CAB-1 cable")], [search("CAB-1", CAB_1)]
+    )
+
+    assert lines[0].sku is None
+    assert "never ran" in findings[0].message
+
+
+def test_citing_a_search_that_did_not_return_the_sku_is_rejected() -> None:
+    lines, findings = resolve_model_lines(
+        [line("CAB-2", text="2 cables 2 m", query="cable 2 m")],
+        [search("cable 2 m", CAB_2), search("cable 1 m", CAB_1)],
+    )
+    assert lines[0].sku == "CAB-2"
+
+    lines, findings = resolve_model_lines(
+        [line("CAB-1", text="2 cables 2 m", query="cable 2 m")],
+        [search("cable 2 m", CAB_2), search("cable 1 m", CAB_1)],
+    )
+    assert lines[0].sku is None
+    assert "did not return it" in findings[0].message
 
 
 def test_candidates_are_kept_only_if_a_search_returned_them() -> None:

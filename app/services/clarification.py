@@ -41,15 +41,15 @@ def _ask(code: FindingCode, line: CheckedLine) -> str:
     match code:
         case FindingCode.UNKNOWN_PRODUCT:
             return (
-                "we couldn't find this product in our catalog. "
+                "We couldn't find this product in our catalog. "
                 "Could you send the SKU or the full product name?"
             )
         case FindingCode.AMBIGUOUS_PRODUCT:
             options = " or ".join(f"{hit.sku} ({hit.name})" for hit in line.candidates)
-            return f"this could be {options}. Which one do you need?"
+            return f"This could be {options}. Which one do you need?"
         case FindingCode.NON_INDIVIDUAL_UNIT:
             return (
-                f"we sell these as individual items and have no set {line.unit_label} size. "
+                f"We sell these as individual items and have no set {line.unit_label} size. "
                 "How many individual items do you need?"
             )
         case _:

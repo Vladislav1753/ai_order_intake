@@ -8,6 +8,7 @@ from app.core.errors import StorageUnavailableError
 from app.db.session import make_sessionmaker
 from app.models import DraftOrder
 from app.repositories.drafts import DraftRepository
+from app.repositories.requests import RequestRepository
 from app.schemas.seed import RequestIn, SeedFile
 from app.services.batch import process_batch
 from app.services.catalog import load_catalog
@@ -75,6 +76,7 @@ async def test_reprocessing_a_request_changes_nothing(
             result = await IntakeService(session, provider, SETTINGS).process(REQUESTS["R1"])
 
     assert result.status is RequestStatus.DRAFTED
+    assert result.already_processed
     assert len(provider.calls) == 2  # one search and one answer, from the first run only
     assert await draft_count(sessionmaker) == 1
 
@@ -107,6 +109,24 @@ async def test_a_failed_request_does_not_stop_the_batch_and_can_be_retried(
 
     retry = await process_batch(sessionmaker, ScriptedProvider(SEED_SCRIPTS), SETTINGS, items)
     assert retry[1].status is RequestStatus.DRAFTED
+
+
+async def test_unusable_input_is_kept_as_a_failed_request(
+    sessionmaker: async_sessionmaker[AsyncSession],
+) -> None:
+    for _ in range(2):  # idempotent: the second run updates the same row
+        async with sessionmaker() as session:
+            result = await IntakeService(session, ScriptedProvider({}), SETTINGS).record_unusable(
+                external_id="unusable-bad.json-1234",
+                source_path="data/inbox/bad.json",
+                raw_text="{broken",
+                error="Invalid JSON",
+            )
+
+    assert result.status is RequestStatus.FAILED
+    assert result.error == "Unusable input: Invalid JSON"
+    async with sessionmaker() as session:
+        assert len(await RequestRepository(session).list_all()) == 1
 
 
 async def test_a_database_error_fails_one_request_and_the_batch_goes_on(
