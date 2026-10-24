@@ -65,7 +65,10 @@ def print_report(results: Sequence[IntakeResult]) -> None:
         )
     done_now = [result for result in results if not result.already_processed]
     statuses = Counter(result.status for result in done_now)
-    new_drafts = Counter(r.draft_status for r in done_now if r.status is RequestStatus.DRAFTED)
+    # A later request can change a draft made earlier in the run (a conflict marks it
+    # needs_review), so each new draft is counted by the last status reported for its order.
+    final = {r.order_ref: r.draft_status for r in results if r.draft_status}
+    new_drafts = Counter(final[r.order_ref] for r in done_now if r.status is RequestStatus.DRAFTED)
     print(
         f"\n{len(results)} requests: {statuses[RequestStatus.DRAFTED]} new drafts "
         f"({', '.join(f'{count} {status}' for status, count in new_drafts.items()) or 'none'}), "
