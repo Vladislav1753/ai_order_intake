@@ -1,0 +1,17 @@
+{
+  "_source": "Relevant keys only, from ~/.claude/settings.json and the user-scope MCP config (claude mcp get context7). Other keys are unrelated to this exercise and omitted.",
+  "model": "opus[1m]",
+  "effortLevel": "high",
+  "enabledPlugins": {
+    "understand-anything@understand-anything": true
+  },
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "<redacted>"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_source": "Snapshot of D:/.claude/launch.json, the Claude desktop app's dev-server config for its browser pane. <repo> and <scratch-dir> replace machine-specific paths.",
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "order-intake-scratch",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run", "--project", "<repo>", "uvicorn", "app.main:app", "--app-dir", "<repo>", "--port", "8765"
+      ],
+      "env": {
+        "DATABASE_URL": "sqlite+aiosqlite:///<scratch-dir>/ui.db",
+        "MODEL_MODE": "replay"
+      },
+      "port": 8765
+    }
+  ]
+}

@@ -1,66 +1,198 @@
 {
-  "template": true,
-  "instructions": "Replace template values with exercise-specific records. Add entries for every configuration used, including earlier versions or their Git commits. No credentials.",
+  "exercise": "Junior AI Engineer take-home, alternative A: AI Order Intake & Exception Handling",
+  "starter_pack_version": "2026-10-02",
   "categories": {
     "development_tools_and_models": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["ai-workflow/user-level/settings.excerpt.json"],
+      "notes": "Claude Code 2.1.308 in the Claude desktop app (Code tab) on Windows 11, model claude-opus-5-5 (user setting opus[1m]), effort high, other settings default. Sessions: planning 2026-10-23, build 2026-10-23 to 2026-10-24, and a fork of the build session used only to explain the data flow (no file changes). Local tools: uv 0.8.9, just 1.59.0, pre-commit 4.7.0, Python 3.12.11."
     },
     "plugins_and_extensions": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["ai-workflow/user-level/settings.excerpt.json", "ai-workflow/user-level/launch.json"],
+      "notes": "Used: the desktop app's built-in browser pane (UI check; dev server from launch.json) and inline diagrams (explanations only). Installed but not used: plugin understand-anything, Claude in Chrome, claude.ai connectors (Claude Docs, Google Drive)."
     },
     "application_models_and_parameters": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["app/core/config.py", ".env.example", "app/providers/openai_chat.py", "app/providers/replay.py", "replays/", "replays/simulated-failures.json"],
+      "notes": "OpenAI Chat Completions via the official async SDK (openai 3.37.0). Model gpt-4.1-mini (responses report gpt-4.1-mini-2025-04-14), temperature 0, max_completion_tokens 1024, timeout 60 s, 1 SDK retry, 5 catalog searches per email then a forced answer. Tool schema and response format generated from Pydantic. MODEL_MODE=replay (default) serves saved real responses labelled cached; R11 is a labelled simulated failure."
     },
     "skills": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [".claude/skills/generate-assignment-data/SKILL.md"],
+      "notes": "Starter-pack skill, unchanged, used once in the data step. Its paths refer to tasks/orders/; in this repo those files are in data/seed/ (noted in CLAUDE.md). The user-level context7-mcp skill was available but the MCP tools were called directly."
     },
     "agent_instructions_and_subagents": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["CLAUDE.md", "ai-workflow/user-level/CLAUDE.md", "ai-workflow/user-level/memory/user-shell-powershell.md"],
+      "notes": "Project CLAUDE.md (architecture, domain rules, model boundaries, workflow), user-level CLAUDE.md (Windows environment, version pinning) and one auto-memory note (PowerShell 5.1 syntax for the candidate's commands). No custom agents or subagent definitions; no subagents were spawned."
     },
     "hooks_and_scripts": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [".pre-commit-config.yaml", "scripts/check_frozen_seed.py", "scripts/check_expected.py"],
+      "notes": "Git pre-commit hooks only, installed with `uv run pre-commit install`, run on every git commit: frozen data/seed, expected-data check, ruff format, ruff check, mypy, pytest. No Claude Code hooks were configured."
     },
     "prompts_and_rules": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["app/providers/prompts/extract_system.md", "app/providers/prompts/__init__.py", "ai-workflow/user-level/rules/context7.md"],
+      "notes": "Application prompt extract-v2 (v1 in commit 25941fa, v2 in 1a2c8b9); its hash is stored with every model call. User-level rule: look up library docs through Context7."
     },
     "tool_and_mcp_settings": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "redacted",
+      "files": ["ai-workflow/user-level/settings.excerpt.json"],
+      "notes": "Context7 MCP server, HTTP, user scope, https://mcp.context7.com/mcp, used for FastAPI, SQLAlchemy 2, Alembic, pytest-asyncio, OpenAI Python SDK and htmx docs. Its CONTEXT7_API_KEY header is redacted."
     },
     "permissions_and_environment_names": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [".claude/settings.json", ".env.example", "ai-workflow/.env.example"],
+      "notes": "Project permissions allow the gate, migration and read-only git commands and deny reading .env, editing data/seed/**, git commit and git push. Unrelated user-level permissions (other projects, Docker, other websites) are omitted."
     }
   },
   "configuration_records": [
     {
-      "name": "",
-      "category": "",
-      "purpose": "",
-      "original_path_or_scope": "",
-      "saved_path": "",
-      "version_or_commit": "",
-      "used_during": "",
-      "status": "",
+      "name": "Claude Code",
+      "category": "development_tools_and_models",
+      "purpose": "Wrote the code, tests, added data and docs, step by step; the candidate reviewed and committed each step",
+      "original_path_or_scope": "Claude desktop app, Code tab",
+      "saved_path": "ai-workflow/user-level/settings.excerpt.json",
+      "version_or_commit": "Claude Code 2.1.308, claude-opus-5-5, effort high",
+      "used_during": "2026-10-23 to 2026-10-24, all steps",
+      "status": "used",
       "redactions": []
+    },
+    {
+      "name": "Project agent instructions",
+      "category": "agent_instructions_and_subagents",
+      "purpose": "Architecture, async rules, domain rules, model boundaries, conventions, commit-per-step workflow",
+      "original_path_or_scope": "CLAUDE.md",
+      "saved_path": "CLAUDE.md",
+      "version_or_commit": "5e3195d, then ffacc88, 25941fa, 1a2c8b9, 6f1d064, bfbbd05 and later (git log -- CLAUDE.md)",
+      "used_during": "all build steps",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "User-level instructions",
+      "category": "agent_instructions_and_subagents",
+      "purpose": "Windows environment rules and version-pinning rule",
+      "original_path_or_scope": "~/.claude/CLAUDE.md",
+      "saved_path": "ai-workflow/user-level/CLAUDE.md",
+      "version_or_commit": "snapshot 2026-10-24",
+      "used_during": "all sessions",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Auto-memory: PowerShell 5.1",
+      "category": "agent_instructions_and_subagents",
+      "purpose": "Give the candidate commands in PowerShell 5.1 syntax (no &&)",
+      "original_path_or_scope": "Claude Code auto-memory for the session folder",
+      "saved_path": "ai-workflow/user-level/memory/user-shell-powershell.md",
+      "version_or_commit": "created 2026-10-23",
+      "used_during": "all sessions after 2026-10-23",
+      "status": "used",
+      "redactions": ["originSessionId removed"]
+    },
+    {
+      "name": "Project permissions",
+      "category": "permissions_and_environment_names",
+      "purpose": "Let the agent run the gate; keep .env unread, data/seed unedited, commits with the candidate",
+      "original_path_or_scope": ".claude/settings.json",
+      "saved_path": ".claude/settings.json",
+      "version_or_commit": "5e3195d",
+      "used_during": "all build steps",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "generate-assignment-data",
+      "category": "skills",
+      "purpose": "Extend the fictional inbox and expected results from the supplied rules",
+      "original_path_or_scope": ".claude/skills/generate-assignment-data/SKILL.md",
+      "saved_path": ".claude/skills/generate-assignment-data/SKILL.md",
+      "version_or_commit": "5e3195d (starter pack, unchanged)",
+      "used_during": "data step, commit 6f1d064",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Context7 MCP",
+      "category": "tool_and_mcp_settings",
+      "purpose": "Current library documentation instead of answers from memory",
+      "original_path_or_scope": "user-scope MCP config (claude mcp get context7)",
+      "saved_path": "ai-workflow/user-level/settings.excerpt.json",
+      "version_or_commit": "hosted server, https://mcp.context7.com/mcp",
+      "used_during": "provider, migrations, tests, review pages",
+      "status": "redacted",
+      "redactions": ["CONTEXT7_API_KEY header value"]
+    },
+    {
+      "name": "Context7 rule",
+      "category": "prompts_and_rules",
+      "purpose": "Tells the agent when and how to use Context7",
+      "original_path_or_scope": "~/.claude/rules/context7.md",
+      "saved_path": "ai-workflow/user-level/rules/context7.md",
+      "version_or_commit": "snapshot 2026-10-24",
+      "used_during": "all sessions",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Built-in browser dev server",
+      "category": "plugins_and_extensions",
+      "purpose": "Run the app on a scratch database so the agent could click through the review screens",
+      "original_path_or_scope": "D:/.claude/launch.json (session folder, outside the repo)",
+      "saved_path": "ai-workflow/user-level/launch.json",
+      "version_or_commit": "snapshot 2026-10-24",
+      "used_during": "review UI step (bfbbd05) and the API refactor after it",
+      "status": "used",
+      "redactions": ["machine-specific paths replaced by <repo> and <scratch-dir>"]
+    },
+    {
+      "name": "understand-anything plugin",
+      "category": "plugins_and_extensions",
+      "purpose": "Code knowledge graphs",
+      "original_path_or_scope": "~/.claude/settings.json enabledPlugins",
+      "saved_path": "ai-workflow/user-level/settings.excerpt.json",
+      "version_or_commit": "installed from github Egonex-AI/Understand-Anything",
+      "used_during": "never",
+      "status": "not-used",
+      "redactions": []
+    },
+    {
+      "name": "Git pre-commit gate",
+      "category": "hooks_and_scripts",
+      "purpose": "Block commits that change data/seed, break data/expected, or fail ruff, mypy or pytest",
+      "original_path_or_scope": ".pre-commit-config.yaml, scripts/check_frozen_seed.py, scripts/check_expected.py",
+      "saved_path": ".pre-commit-config.yaml",
+      "version_or_commit": "8324faa, expected-data hook added in 6f1d064",
+      "used_during": "every commit",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Application extraction prompt",
+      "category": "prompts_and_rules",
+      "purpose": "System prompt for the order-extraction tool loop",
+      "original_path_or_scope": "app/providers/prompts/extract_system.md",
+      "saved_path": "app/providers/prompts/extract_system.md",
+      "version_or_commit": "extract-v1 in 25941fa, extract-v2 in 1a2c8b9",
+      "used_during": "every model call; replays recorded with extract-v2",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Application model settings",
+      "category": "application_models_and_parameters",
+      "purpose": "Provider, model and limits for the live and replay clients",
+      "original_path_or_scope": "app/core/config.py, .env (git-ignored)",
+      "saved_path": ".env.example",
+      "version_or_commit": "gpt-4.1-mini, temperature 0, 1024 tokens, 60 s, search budget 5",
+      "used_during": "recording (live) and every replay",
+      "status": "redacted",
+      "redactions": ["MODEL_API_KEY is only in the git-ignored .env"]
     }
   ],
-  "replay_command": "",
-  "workflow_example_path": ""
+  "replay_command": "just install; just process; just run   (or: uv sync; uv run alembic upgrade head; uv run python -m app.cli seed; uv run python -m app.cli process --mode replay; uv run uvicorn app.main:app)",
+  "workflow_example_path": "ai-workflow/README.md#one-workflow-example"
 }
