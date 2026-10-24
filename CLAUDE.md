@@ -81,8 +81,9 @@ Everything that does I/O is `async def`: routes, services, repositories, provide
 
    Invalid output, an exhausted step budget, a timeout, or an API error means `failed`, and the
    batch continues.
-4. **Validate (code)**: the SKU must appear in this run's `search_catalog` results (kept in
-   memory during `process`; the reviewer may pick any catalog SKU later) and in the catalog,
+4. **Validate (code)**: the SKU must be the *only* result of one of this run's `search_catalog`
+   calls (kept in memory during `process`; a SKU picked among tied results goes back to
+   ambiguous; the reviewer may pick any catalog SKU later) and in the catalog,
    and the quantity must be a positive int of individual items. Unit words such as "box" or
    "pack", and vague amounts, become findings.
 5. **Price (pure function)**: see the domain rules.
@@ -155,8 +156,12 @@ migrations drift apart).
 - Full type hints; `mypy app scripts` is clean. SQLAlchemy uses `Mapped[...]` / `mapped_column`.
 - Enums are `StrEnum`. Timestamps are timezone-aware UTC. IDs are integers in the DB; external
   request IDs are kept as given.
-- Domain errors are raised as small exception classes in `services/` and converted to HTTP or
-  status responses in `routers/`.
+- **Errors.** Domain errors live in `app/core/errors.py` (`DomainError`: `NotFoundError`,
+  `AlreadyExistsError`, `InvalidDataError`, `StorageUnavailableError`). Library exceptions don't
+  cross layers: every async repository method has `@translates_db_errors`, and services wrap
+  `session.commit()` in `translate_db_errors()` (`app/db/errors.py`). Routers get HTTP statuses
+  from `app/api/errors.py`. The batch turns any error into a `failed` result for that request
+  only. Anything that is not a `DomainError` is a bug: let it propagate, never swallow it.
 - Use stdlib `logging`, not `print` (scripts excepted). No commented-out code.
 - Docstrings only where intent is not obvious from names. Keep functions small and single-purpose.
 - Name things after the domain: `order_ref`, `unit_cents`, `line_cents`, `findings`.

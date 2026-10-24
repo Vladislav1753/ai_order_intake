@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -21,10 +22,16 @@ class Settings(BaseSettings):
 
     # live: call the provider and save each response; replay: serve saved responses, no key needed
     model_mode: Literal["live", "replay"] = "replay"
-    model_name: str = ""
+    model_name: str = "gpt-4.1-mini"
+    model_api_key: SecretStr | None = None
     model_temperature: float = 0.0
     model_max_tokens: int = 1024
-    model_timeout_s: float = 30.0
+    model_timeout_s: float = 60.0
+
+    # Catalog searches the model may make per request before it must answer.
+    catalog_search_budget: int = Field(default=5, ge=1)
+    # Order groups processed at once by the batch runner.
+    max_concurrency: int = Field(default=4, ge=1)
 
 
 @lru_cache

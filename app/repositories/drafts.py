@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.db.errors import translates_db_errors
 from app.models import DraftOrder
 
 
@@ -14,6 +15,7 @@ class DraftRepository:
     def add(self, draft: DraftOrder) -> None:
         self.session.add(draft)
 
+    @translates_db_errors
     async def get(self, draft_id: int) -> DraftOrder | None:
         return await self.session.scalar(
             select(DraftOrder)
@@ -21,6 +23,7 @@ class DraftRepository:
             .options(selectinload(DraftOrder.lines), selectinload(DraftOrder.corrections))
         )
 
+    @translates_db_errors
     async def get_by_order_ref(self, order_ref: str) -> DraftOrder | None:
         return await self.session.scalar(
             select(DraftOrder)
@@ -28,6 +31,7 @@ class DraftRepository:
             .options(selectinload(DraftOrder.lines))
         )
 
+    @translates_db_errors
     async def list_all(self) -> list[DraftOrder]:
         return list(
             await self.session.scalars(

@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.errors import translate_db_errors
 from app.models import Product
 from app.repositories.products import ProductRepository
 from app.schemas.seed import CatalogItem
@@ -45,5 +46,6 @@ async def load_catalog(session: AsyncSession, items: Sequence[CatalogItem]) -> i
     products = ProductRepository(session)
     for item in items:
         await products.upsert(sku=item.sku, name=item.name, unit_cents=item.unit_cents)
-    await session.commit()
+    with translate_db_errors():
+        await session.commit()
     return len(items)

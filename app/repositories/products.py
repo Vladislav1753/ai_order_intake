@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.errors import translates_db_errors
 from app.models import Product
 
 
@@ -8,9 +9,11 @@ class ProductRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    @translates_db_errors
     async def list_all(self) -> list[Product]:
         return list(await self.session.scalars(select(Product).order_by(Product.sku)))
 
+    @translates_db_errors
     async def get_by_sku(self, sku: str) -> Product | None:
         return await self.session.scalar(select(Product).where(Product.sku == sku))
 

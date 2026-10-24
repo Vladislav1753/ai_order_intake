@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.errors import register_error_handlers
 from app.core.config import Settings, get_settings
 from app.db.session import make_engine, make_sessionmaker
 from app.routers import health
@@ -20,6 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await engine.dispose()
 
     app = FastAPI(title="Order Intake", debug=settings.debug, lifespan=lifespan)
+    register_error_handlers(app)
     app.include_router(health.router)
     return app
 

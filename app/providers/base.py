@@ -10,16 +10,27 @@ class ModelResponse(BaseModel):
 
     source: ResponseSource
     model: str
-    content: Any
+    message: dict[str, Any]  # the assistant message: content and/or tool_calls
     raw: dict[str, Any]
+
+
+class ProviderError(Exception):
+    """The model could not answer: API error, timeout, missing replay, or a simulated failure."""
+
+    def __init__(self, message: str, source: ResponseSource = ResponseSource.LIVE) -> None:
+        super().__init__(message)
+        self.source = source
 
 
 class LLMProvider(Protocol):
     async def complete(
         self,
         *,
-        system: str,
         messages: list[dict[str, Any]],
-        tools: list[dict[str, Any]] | None = None,
+        tools: list[dict[str, Any]],
+        tool_choice: str,
+        response_format: dict[str, Any],
         cache_key: str,
-    ) -> ModelResponse: ...
+    ) -> ModelResponse:
+        """`cache_key` is `<request id>.<step>.<digest of the call>`, unique per call."""
+        ...
